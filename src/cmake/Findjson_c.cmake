@@ -21,7 +21,7 @@ find_path(json_c_INCLUDE_DIR
 
 # Finally the library itself
 find_library(json_c_LIBRARY
-  NAMES json
+  NAMES json-c
   PATHS ${json_c_PKGCONF_LIBRARY_DIRS}
 )
 

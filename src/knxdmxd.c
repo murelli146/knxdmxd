@@ -42,7 +42,8 @@
   "\t-d               Run as daemon/No debug output\n"\
   "\t-p <pidfile>     PID-filename\n"\
   "\t-u <eib url>     URL to contact eibd like local:/tmp/eib or ip:192.168.0.101\n"\
-  "\t-c <config-file> Config-File\n"
+  "\t-c <config-file> Config-File\n"\
+  "\t-r <E1.31 Bridge> Unicastmode 192.168.0.10\n"
 #define NUM_THREADS 5
 
 #define RETRY_TIME 5
@@ -574,13 +575,13 @@ void *cue_processor() {
               next = cuelists[i].cues[next].cue_link;
               cuelists[i].next_cue = next;
               syslog(LOG_DEBUG,
-                  "cue_processor: cuelist %s will advance via link from %d to cue %d ",
+                  "cue_processor: cuelist %s will advance via link from %ld to cue %ld ",
                   cuelists[i].name, cuelists[i].current_cue,
                   cuelists[i].next_cue);
             } else { // normal cue
               cuelists[i].next_cue = next;
               syslog(LOG_DEBUG,
-                  "cue_processor: %lu cuelist %s will advance to cue %d ",
+                  "cue_processor: %lu cuelist %s will advance to cue %ld ",
                   currenttime, cuelists[i].name,
                   cuelists[i].next_cue);
             }
@@ -725,7 +726,7 @@ void *knx_receiver() {
 
               do {
                 syslog(LOG_DEBUG,
-                    "knx_receiver: trigger %u (GA:%u) triggered target %u (type %u)",
+                    "knx_receiver: trigger %lu (GA:%u) triggered target %lu (type %u)",
                     trigger, triggers[trigger].ga,
                     triggers[trigger].target,
                     triggers[trigger].target_type);
@@ -781,7 +782,7 @@ void *knx_receiver() {
                     if (val == 0) { // stop dimming
                       pthread_mutex_lock(&dimmer_lock);
                       dimmers[triggers[trigger].target].process =
-                      FALSE;
+                      false;
                       pthread_mutex_unlock(&dimmer_lock);
 
                       syslog(LOG_DEBUG,
@@ -798,7 +799,7 @@ void *knx_receiver() {
                       u_int8_t step = (val & 0x7);
                       pthread_mutex_lock(&dimmer_lock);
                       dimmers[triggers[trigger].target].process =
-                      TRUE;
+                      true;
                       dimmers[triggers[trigger].target].direction =
                           direction;
                       dimmers[triggers[trigger].target].next =
@@ -1144,7 +1145,7 @@ void load_config() {
 
   in_data = json_object_object_get(config, "channels");
   channel_num = json_object_array_length(in_data);
-  syslog(LOG_DEBUG, "load_config: trying to import %d channel(s)",
+  syslog(LOG_DEBUG, "load_config: trying to import %ld channel(s)",
       channel_num);
 
   channels = (channel_t*) calloc(channel_num, sizeof(*channels));
@@ -1170,14 +1171,14 @@ void load_config() {
       channels[i].dmx.universe = 0;
       channels[i].name = NULL;
       syslog(LOG_INFO,
-          "load_config: skipping channel definition %d, missing name or DMX",
+          "load_config: skipping channel definition %ld, missing name or DMX",
           i + 1);
       continue;
     }
 
     if (!strdcopy(&channels[i].name, json_object_get_string(name))) {
       syslog(LOG_ERR,
-          "load_config: could not allocate memory for name of channel definition %d",
+          "load_config: could not allocate memory for name of channel definition %ld",
           i);
       exit(EXIT_FAILURE);
     }
@@ -1243,7 +1244,7 @@ void load_config() {
    * create universes
    */
 
-  syslog(LOG_DEBUG, "load_config: allocating memory for %d universe(s)",
+  syslog(LOG_DEBUG, "load_config: allocating memory for %ld universe(s)",
       universe_num);
   universes = (universe_t*) calloc(universe_num + 1, sizeof(*universes));
   if (universes == NULL) {
@@ -1289,7 +1290,7 @@ void load_config() {
 
   in_data = json_object_object_get(config, "dimmers");
   dimmer_num = json_object_array_length(in_data);
-  syslog(LOG_DEBUG, "load_config: trying to import %d dimmer(s)", dimmer_num);
+  syslog(LOG_DEBUG, "load_config: trying to import %ld dimmer(s)", dimmer_num);
 
   dimmers = (dimmer_t*) calloc(dimmer_num, sizeof(*dimmers));
   if (dimmers == NULL) {
@@ -1302,7 +1303,7 @@ void load_config() {
 
     struct json_object *element = json_object_array_get_idx(in_data, i);
 
-    dimmers[i].process = FALSE; // disable processing
+    dimmers[i].process = false; // disable processing
 
     // get name & create
     struct json_object *name = json_object_object_get(element, "name");
@@ -1313,7 +1314,7 @@ void load_config() {
       dimmers[i].dmx.universe = 0;
       dimmers[i].name = NULL;
       syslog(LOG_INFO,
-          "load_config : skipping dimmer definition %d, missing name, channels or GA",
+          "load_config : skipping dimmer definition %ld, missing name, channels or GA",
           i + 1);
       continue;
     }
@@ -1333,7 +1334,7 @@ void load_config() {
     if (dimmers[i].dmx.universe == 0) {
       dimmers[i].name = NULL;
       syslog(LOG_INFO,
-          "load_config: skipping dimmer definition %d, invalid channel %s",
+          "load_config: skipping dimmer definition %ld, invalid channel %s",
           i + 1, ch);
       continue;
     }
@@ -1422,7 +1423,7 @@ void load_config() {
 
   in_data = json_object_object_get(config, "scenes");
   scene_num = json_object_array_length(in_data);
-  syslog(LOG_DEBUG, "load_config: trying to import %d scene(s) ", scene_num);
+  syslog(LOG_DEBUG, "load_config: trying to import %ld scene(s) ", scene_num);
 
   scenes = (cue_t*) calloc(scene_num, sizeof(*scenes));
   if (scenes == NULL) {
@@ -1470,7 +1471,7 @@ void load_config() {
   struct json_object *json_cuelists = json_object_object_get(config,
       "cuelists");
   cuelist_num = json_object_array_length(json_cuelists);
-  syslog(LOG_DEBUG, "load_config: trying to import %d cuelist(s)",
+  syslog(LOG_DEBUG, "load_config: trying to import %ld cuelist(s)",
       cuelist_num);
 
   cuelists = (cuelist_t*) calloc(cuelist_num, sizeof(*cuelists));
@@ -1537,18 +1538,18 @@ void load_config() {
                 if (found) {
                     cuelists[i].cues[j].cue_link = k;
                     syslog(LOG_DEBUG,
-            "load_config: making link from cue %d to cue %d in cuelist %s",
+            "load_config: making link from cue %ld to cue %ld in cuelist %s",
             j, k, cuelists[i].name);
                 } else {
                     syslog(LOG_WARNING,
-            "load_config: making link from cue %d in cuelist %s failed (link not found)",
+            "load_config: making link from cue %ld in cuelist %s failed (link not found)",
             j, cuelists[i].name);                
                 }
       }
     }
 
     for (j = 0; j < cuelists[i].cue_num; j++) { // make links
-      syslog(LOG_DEBUG, "load_config: cue %d %s, %d, link %d", j, cuelists[i].cues[j].name, cuelists[i].cues[j].is_link, cuelists[i].cues[j].cue_link);
+      syslog(LOG_DEBUG, "load_config: cue %ld %s, %d, link %ld", j, cuelists[i].cues[j].name, cuelists[i].cues[j].is_link, cuelists[i].cues[j].cue_link);
     }
 
     struct json_object *triggers = json_object_object_get(cuelist,
