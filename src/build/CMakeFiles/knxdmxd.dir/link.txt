@@ -1,1 +1,0 @@
-/usr/bin/cc  -g -O2 -Wall  -s CMakeFiles/knxdmxd.dir/knxdmxd.c.o  -o knxdmxd -Wl,-rpath,/usr/local/lib -rdynamic /usr/local/lib/libjson-c.so /usr/local/lib/libeibclient.so -lpthread -luuid 

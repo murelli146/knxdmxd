@@ -1,3 +1,0 @@
-/root/knxdmxd/src/build/CMakeFiles/edit_cache.dir
-/root/knxdmxd/src/build/CMakeFiles/rebuild_cache.dir
-/root/knxdmxd/src/build/CMakeFiles/knxdmxd.dir
